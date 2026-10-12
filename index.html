@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="chatbot.css"></link>
+    <title>Chatbot</title>
+  </head>
+  <body>
+    <div class="js-container"></div>
+    <script></script>
+    <script src="https://unpkg.com/supersimpledev/react.js"></script>
+    <script src="https://unpkg.com/supersimpledev/react-dom.js"></script>
+    <script src="https://unpkg.com/supersimpledev/chatbot.js"></script>
+    <script src="https://unpkg.com/supersimpledev/babel.js"></script>
+    <script type="text/babel">
+      function ChatInput({chatMessages,setChatMessages}) {
+        const [inputText, setInputText] = React.useState('');
+        function saveInputText(event){
+          setInputText(event.target.value);
+        }
+        function handlekeyDown(event){
+          if(event.key === 'Enter'){
+            sendMessage();
+          }
+        };
+        function sendMessage(){
+          if(!inputText.trim()) return;
+
+          const userMessage = inputText;
+
+          const newChatMessage = [
+            ...chatMessages,
+            {
+              message: inputText,
+              sender: 'user',
+              id: crypto.randomUUID()
+            },{
+              message: 'typing',
+              sender: 'robot',
+              id:'typing'
+            }
+          ]
+          setChatMessages(newChatMessage);
+          setInputText('');
+          setTimeout(()=>{
+            const response = Chatbot.getResponse(userMessage);
+            const updatedMessages = newChatMessage.filter(msg => msg.id !== 'typing');
+            setChatMessages([
+              ...updatedMessages,
+              {
+                message: response,
+                sender: 'robot',
+                id: crypto.randomUUID()
+              }
+            ]);
+          },700)
+        }
+        return (
+          <div className="chat-input-container">
+            <input
+              className="chat-input" 
+              placeholder="Send a message to Chatbot" 
+              size="30"
+              onChange={saveInputText}
+              value = {inputText}
+              onKeyDown = {handlekeyDown}
+            />
+            <button
+              className="send-button"
+              onClick={sendMessage}
+            >Send</button>
+          </div>
+        );
+      }
+      function ChatMessage({message,sender}){
+        //const {message,sender} = props;
+        /*
+        if(sender === 'robot'){
+          return (
+            <div>
+              <img src="robot.png" width="50"/>
+              {message}
+            </div>
+
+          );
+        }
+        */
+       function copyMessage(text){
+        navigator.clipboard.writeText(text);
+       }
+        return (
+          <div className={
+            sender === 'user'
+            ?'chat-message-user'
+            : 'chat-message-robot'
+          }>
+            {sender === 'robot' && (
+              <img src="robot4.png" className="chat-message-profile"/>
+            )}
+            <div className="chat-message-text">
+              {message === 'typing' ? (
+                <div className="typing-indicator">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              ): ( message
+                
+              )}
+            </div>
+            {sender === 'robot' && message !== 'typing' && (
+              <button className="copy-button"
+              onClick={()=>copyMessage(message)}
+              >📋
+              </button>
+            )}
+            {sender === 'user' && (
+              <img src="user4.png" className="chat-message-profile"/>
+            )}
+          </div>
+        );
+      }
+
+      function ChatMessages({chatMessages}){
+        const chatMessagesRef = React.useRef(null);
+        React.useEffect(()=>{
+          const containerElen = chatMessagesRef.current;
+          if(containerElen){
+            containerElen.scrollTo({
+              top: containerElen.scrollHeight,
+              behavior: "smooth"
+          
+            });
+          }
+        },[chatMessages]);
+        return(
+          <div className="chat-messages-container"
+          ref={chatMessagesRef}>
+            {chatMessages.map((chatMessage)=>{      
+              return (
+                <ChatMessage
+                  message = {chatMessage.message}
+                  sender = {chatMessage.sender}
+                  key= {chatMessage.id}
+                />
+              );
+            })
+            }
+          </div>
+        );
+      }
+      function App(){
+        const [chatMessages,setChatMessages] = React.useState([]);
+        const [isDarkMode, setIsDarkMode] = React.useState(false);
+        //const [chatMessages, setChatMessages] = array;
+        // const chatMessages = array[0];
+        // const setChatMessages = array[1];
+        function toggleTheme(){
+          setIsDarkMode(prev => !prev);
+        }
+        function clearChat(){
+          setChatMessages([]);
+        }
+        return (
+          <div className={`app-container ${isDarkMode ? 'dark-mode':'light-mode'}`}>
+            <div className="top-bar">
+              
+              <button className="theme-button" onClick={toggleTheme}>{isDarkMode ? 'Light Mode' : 'Dark Mode'}</button>
+              <span>Chatbot</span>
+              <button className="clear-button" onClick={clearChat}>Clear Chat</button>
+            </div>
+            <ChatMessages 
+              chatMessages = {chatMessages}
+            />
+            <ChatInput
+              chatMessages = {chatMessages}
+              setChatMessages = {setChatMessages}
+            />
+          </div>
+        );
+      }
+      const container = document.querySelector('.js-container');
+      ReactDOM.createRoot(container).render(<App />);
+    </script>
+  </body>
+</html>
